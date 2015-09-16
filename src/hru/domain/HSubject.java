@@ -39,6 +39,10 @@ public class HSubject extends HObject {
         return AccessMap.getInstance().removeAccess(this, subject, object);
     }
 
+    public void printDocs(){
+        AccessMap.getInstance().printFor(this);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

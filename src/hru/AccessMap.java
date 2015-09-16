@@ -1,7 +1,8 @@
 package hru;
 
-import hru.domain.*;
+import hru.domain.Access;
 import hru.domain.HObject;
+import hru.domain.HSubject;
 
 import java.util.HashMap;
 
@@ -20,38 +21,38 @@ public class AccessMap {
     public boolean createObject(HSubject actor, HObject object) throws IllegalAccessException {
         HashMap<HObject, Access> ownedObjects = smap.get(actor);
         if (ownedObjects != null) {
-            Access access = ownedObjects.get(object);
+            Object access = ownedObjects.get(object);
             if (access == null) {
                 ownedObjects.put(object, Access.OWN);
-                omap.put(object, new HashMap<>());
+                omap.put(object, new HashMap<HSubject, Access>());
                 omap.get(object).put(actor, Access.OWN);
                 return true;
-            } else throw new IllegalStateException("Объект уже зарегистрирован в системе");
-        } else throw new IllegalAccessException("Субъект не зарегистрирован в системе");
+            } else throw new IllegalStateException("РћР±СЉРµРєС‚ СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ СЃРёСЃС‚РµРјРµ");
+        } else throw new IllegalAccessException("РќРµРІРѕР·РјРѕР¶РЅРѕ СЃРѕР·РґР°С‚СЊ РѕР±СЉРµРєС‚ РґР»СЏ РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.");
     }
 
     public boolean createSubject(HSubject actor, String username, String password) throws IllegalStateException {
         HSubject subject = new HSubject(username, password);
         if (!smap.containsKey(subject)) {
-            smap.put(subject, new HashMap<>());
+            smap.put(subject, new HashMap<HObject, Access>());
             smap.get(subject).put(subject, Access.OWN);
             if (actor != null) smap.get(actor).put(subject, Access.OWN);
 
-            omap.put(subject, new HashMap<>());
+            omap.put(subject, new HashMap<HSubject, Access>());
             omap.get(subject).put(subject, Access.OWN);
             if (actor != null) omap.get(subject).put(actor, Access.OWN);
             return true;
-        } else throw new IllegalStateException("Субъект уже зарегистрирован в системе");
+        } else throw new IllegalStateException("РћС€РёР±РєР°. РЎСѓР±СЉРµРєС‚ СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ СЃРёСЃС‚РµРјРµ");
     }
 
     public int checkAccess(HSubject s, HObject o, Access access) throws IllegalAccessException {
         HashMap<HObject, Access> owned = smap.get(s);
         if (owned != null) {
-            Access s_access = o == null ? null : owned.get(o);
-            if (s_access == null) throw new IllegalStateException("Доступ невозможен. Объек не сущесвует в системе.");
-            if (access.compareTo(s_access) < 0) System.out.println("Доступ запрещен.");
+            Access s_access = o == null ? null : (Access) owned.get(o);
+            if (s_access == null) throw new IllegalStateException("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°.");
+            if (access.compareTo(s_access) < 0) System.out.println("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°. РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїР°");
             return access.compareTo(s_access);
-        } else throw new IllegalAccessException("Субъект не зарегистрирован в системе.");
+        } else throw new IllegalAccessException("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°. РЎСѓР±СЉРµРєС‚ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ СЃРёСЃС‚РµРјРµ");
     }
 
     public boolean destroySubject(HSubject actor, String subjectName) throws IllegalStateException {
@@ -59,12 +60,11 @@ public class AccessMap {
             HSubject subject = findSubject(subjectName);
             if (checkAccess(actor, subject, Access.OWN) == 0) {
                 if (smap.containsKey(subject)) {
-                    if (smap.get(actor).get(subject) != null)
-                        smap.get(subject).remove(subject);
+                    if (smap.get(actor).get(subject) != null) smap.get(subject).remove(subject);
                     smap.remove(subject);
                     omap.remove(subject);
                     return true;
-                } else throw new IllegalArgumentException("Попытка удаления несуществующего субъекта");
+                } else throw new IllegalArgumentException("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°. РџРѕРїС‹С‚РєР° СѓРґР°Р»РµРЅРёСЏ РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ СЃСѓР±СЉРµРєС‚Р°");
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -78,13 +78,13 @@ public class AccessMap {
             if (checkAccess(actor, object, Access.OWN) == 0) {
                 if (omap.containsKey(object)) {
                     HashMap<HSubject, Access> owners = omap.get(object);
-                    for (HSubject s : owners.keySet()) {
+                    for (Object s : owners.keySet()) {
                         HashMap<HObject, Access> owned = smap.get(s);
                         owned.remove(object);
                     }
                     omap.remove(object);
                     return true;
-                } else throw new IllegalStateException("Попытка удаления не существующего объекта");
+                } else throw new IllegalStateException("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°.РџРѕРїС‹С‚РєР° СѓРґР°Р»РµРЅРёСЏ РЅРµСЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ РѕР±СЉРµРєС‚Р°");
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -104,7 +104,7 @@ public class AccessMap {
                     omap.get(object).put(subject, access);
                     return true;
                 } else
-                    throw new IllegalArgumentException("Невозможно назначить права для несуществующего пользователя");
+                    throw new IllegalArgumentException("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°. РЎСѓР±СЉРµРєС‚ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ СЃРёСЃС‚РµРјРµ.");
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -122,7 +122,7 @@ public class AccessMap {
                     ownedObjects.remove(object);
                     omap.get(object).remove(subject);
                     return true;
-                } else throw new IllegalArgumentException("Невозможно удалить право у несуществующего пользователя");
+                } else throw new IllegalArgumentException("РћС€РёР±РєР° РґРѕСЃС‚СѓРїР°. РЎСѓР±СЉРµРєС‚ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ РІ СЃРёСЃС‚РµРјРµ");
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -150,5 +150,15 @@ public class AccessMap {
             }
         }
         return null;
+    }
+
+    public void printFor(HSubject subject) {
+        HashMap<HObject, Access> map = smap.get(subject);
+        for (HObject s : map.keySet()) {
+            String msg = "[%s] name: %s access: %s";
+            String type = "object";
+            if (s instanceof HSubject) type = "subject";
+            System.out.println(String.format(msg, type, s.getName(), map.get(s).getDesc()));
+        }
     }
 }

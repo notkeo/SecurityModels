@@ -18,12 +18,17 @@ public class Main {
                     createSubject(s);
                     break;
                 }
+                case "print" :{
+                    if (currentSubject != null)
+                        currentSubject.printDocs();
+                    break;
+                }
                 case "auth": {
                     auth(s);
                     break;
                 }
                 case "create_obj": {
-                    createSubject(s);
+                    createObject(s);
                     break;
                 }
                 case "destroy_obj": {
@@ -79,6 +84,16 @@ public class Main {
         String login = scanner.next();
         String password = scanner.next();
         AccessMap.getInstance().createSubject(currentSubject, login, password);
+    }
+
+    private static void createObject(Scanner scanner) {
+        String name = scanner.next();
+        if (currentSubject != null) try {
+            currentSubject.createObject(name);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        else System.out.println("Доступ запрещен. Выполните авторизацию");
     }
 
     public static void setAccess(Scanner s) {
